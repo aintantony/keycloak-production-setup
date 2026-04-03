@@ -24,29 +24,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-
       KC_HOSTNAME: ${KC_HOSTNAME}
-      KC_PROXY: edge
+      KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: true
-
       KC_TRANSACTION_XA_ENABLED: false
-
     command:
       - start
-      - --optimized
-
     volumes:
       - keycloak_data:/opt/keycloak/data
-
     networks:
       - app_network
 
@@ -56,16 +48,16 @@ services:
     restart: unless-stopped
     depends_on:
       - keycloak
-
+    environment:
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      NGINX_ENVSUBST_FILTER: KC_HOSTNAME
     ports:
       - "80:80"
       - "443:443"
-
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/certs:/etc/nginx/certs:ro   # Cloudflare origin certs
-
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
     networks:
       - app_network
 

@@ -1,79 +1,68 @@
-# Keycloak Production Setup (Postgres + Nginx + Cloudflare)
+# Keycloak Production Template (Docker + Postgres + Nginx + Cloudflare)
 
-Deploy Keycloak for production behind Nginx with Cloudflare.
-
----
+Production-ready template for running Keycloak behind Nginx with Cloudflare Origin TLS.
 
 ## Architecture
 
-User → Cloudflare → Nginx → Keycloak → PostgreSQL
+Cloudflare -> Nginx -> Keycloak -> PostgreSQL
 
----
+## Prerequisites
 
-## Structure
+- Docker + Docker Compose plugin
+- Public server with ports `80` and `443` open
+- Domain/subdomain in Cloudflare (for example `auth.example.com`)
+
+## 1. Clone And Configure
+
+```bash
+git clone https://github.com/aintantony/keycloak-production-setup.git
+cd keycloak-production-setup
+cp .env.example .env
 ```
-.
-├── .env.example
-├── docker-compose.yml
-└── nginx
-    ├── nginx.conf
-    ├── certs/
-    │   ├── fullchain.pem
-    │   └── privkey.pem
-    └── conf.d/
-        └── keycloak.conf
-```
----
 
-## Requirements
+Edit `.env`:
 
-- Docker
-- Domain (e.g. auth.example.com)
-- Cloudflare
+- `PROJECT_NAME`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD`
+- `KC_HOSTNAME` (your real subdomain)
 
----
+Note: Nginx hostname is auto-generated from `KC_HOSTNAME`, so you only change it in one place.
 
-## Cloudflare
+## 2. Add Cloudflare Origin Certificate
 
-- DNS: auth.example.com → SERVER_IP (Proxy ON)
-- SSL: Full (strict)
-- Origin cert:
-  - nginx/certs/fullchain.pem
-  - nginx/certs/privkey.pem
+In Cloudflare:
 
----
+- SSL/TLS -> Origin Server -> Create certificate
+- Hostname: your subdomain (or wildcard)
 
-## Run
-```
+Save files to:
+
+- `nginx/certs/fullchain.pem` -> paste **Origin Certificate (pem)**
+- `nginx/certs/privkey.pem` -> paste **Private Key (pem)**
+
+## 3. Cloudflare DNS + SSL Settings
+
+- DNS record: `your-subdomain` -> your server public IP
+- Proxy status: `Proxied` (orange cloud ON)
+- SSL/TLS mode: `Full (strict)`
+
+Do not use `Flexible`.
+
+## 4. Deploy
+
+```bash
 docker compose up -d
+docker compose ps
+docker compose logs -f nginx keycloak db
 ```
----
 
 ## Access
 
-https://auth.example.com  
-https://auth.example.com/admin  
+- `https://<KC_HOSTNAME>`
 
----
+## Security Checklist
 
-## Admin
-
-admin / adminpassword
-
----
-
-## Notes
-
-- Keycloak is internal only
-- Nginx handles HTTPS
-- KC_PROXY=edge required
-- Do NOT use Flexible SSL
-
----
-
-## Commands
-```
-docker compose logs -f  
-docker compose restart  
-docker compose down  
-```
+- Change default passwords in `.env`
+- Keep `.env` private
+- Never commit real `.pem` certificate files
