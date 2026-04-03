@@ -1,6 +1,1 @@
 .env
-.codex
-
-# TLS certs are local deployment secrets
-nginx/certs/*.pem
-!nginx/certs/.gitkeep
