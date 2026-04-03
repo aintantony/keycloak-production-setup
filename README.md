@@ -61,8 +61,3 @@ docker compose logs -f nginx keycloak db
 
 - `https://<KC_HOSTNAME>`
 
-## Security Checklist
-
-- Change default passwords in `.env`
-- Keep `.env` private
-- Never commit real `.pem` certificate files
